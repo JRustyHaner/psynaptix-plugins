@@ -14,6 +14,10 @@ permissions:
   contents: read
   attestations: write
 
+env:
+  # psynaptix commit whose src/plugin/sanitizer.ts runs the static scan.
+  PSYNAPTIX_SANITIZER_SHA: 1ff82af
+
 jobs:
   gate:
     runs-on: ubuntu-latest
@@ -30,15 +34,36 @@ jobs:
       - name: Install (scripts blocked — supply-chain hardening)
         run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Run plugin tests
+      - name: Run plugin tests (all plugins + examples)
         id: test
         run: npm test
 
-      - name: Sanitizer scan (psynaptix plugin-gate action)
+      - name: Sanitizer scan (canonical sanitizer from psynaptix @ ${{ env.PSYNAPTIX_SANITIZER_SHA }})
         id: sanitize
-        uses: psynaptix/plugin-sanitizer-action@v1
-        with:
-          entry: entry.js
+        run: |
+          curl -fsSL "https://raw.githubusercontent.com/JRustyHaner/psynaptix/${{ env.PSYNAPTIX_SANITIZER_SHA }}/src/plugin/sanitizer.ts" -o /tmp/sanitizer.ts
+          node --experimental-strip-types --no-warnings -e "
+            import('/tmp/sanitizer.ts').then(async ({ sanitizePluginDir }) => {
+              const fs = await import('node:fs');
+              const dirs = ['plugins', 'examples'];
+              let bad = 0;
+              for (const dir of dirs) {
+                for (const name of fs.readdirSync(dir)) {
+                  const entry = dir + '/' + name + '/entry.js';
+                  if (!fs.existsSync(entry)) continue;
+                  const files = { 'entry.js': await fs.promises.readFile(entry, 'utf8') };
+                  const r = sanitizePluginDir(files, 'entry.js');
+                  if (!r.ok) {
+                    bad++;
+                    console.error('SANITIZER FLAGGED', entry, JSON.stringify(r.violations));
+                  } else {
+                    console.log('sanitizer clean:', entry);
+                  }
+                }
+              }
+              if (bad > 0) process.exit(1);
+            }).catch((e) => { console.error(e); process.exit(1); });
+          "
 
       - name: Attest the gate result (sigstore — unforgeable)
         uses: actions/attest-build-provenance@v2

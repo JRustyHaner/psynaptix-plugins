@@ -1,0 +1,13 @@
+{
+  "name": "psynaptix-plugins",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Canonical Psynaptix signal-provider plugin tree (issue #484).",
+  "scripts": {
+    "test": "node --test plugins/*/test/*.test.js examples/*/test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
