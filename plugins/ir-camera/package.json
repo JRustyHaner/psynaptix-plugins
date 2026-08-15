@@ -1,0 +1,13 @@
+{
+  "name": "ir-camera",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "IR bright-pupil gaze plugin — derived-only (psynaptix issue #470).",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

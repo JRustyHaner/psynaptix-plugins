@@ -1,0 +1,9 @@
+{
+  "id": "ir-camera",
+  "version": "0.1.0",
+  "entry": "entry.js",
+  "capabilities": ["signal:stream", "signal:summary"],
+  "signalType": "eye-tracking",
+  "publisher": "psynaptix-dev",
+  "description": "IR bright-pupil gaze plugin (issue #470): processes host-relayed GREY IR frames client-side and emits DERIVED gaze metrics only — raw frames never leave the machine, never touch the disk, never cross the bridge."
+}
