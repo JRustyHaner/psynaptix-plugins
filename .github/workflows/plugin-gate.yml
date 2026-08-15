@@ -18,7 +18,7 @@ env:
   # canonical psynaptix-plugins commit whose gate/sanitizer.ts runs the scan.
   # The canonical repo is PUBLIC — the fetch works unauthenticated (the
   # psynaptix service repo itself is private, so it cannot host the fetch).
-  CANONICAL_SANITIZER_SHA: PLACEHOLDER
+  CANONICAL_SANITIZER_SHA: 15ab45d2a3064804ec2cd2452e4053e6598bfbec
 
 jobs:
   gate:
