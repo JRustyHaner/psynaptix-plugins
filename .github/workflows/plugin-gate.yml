@@ -67,11 +67,17 @@ jobs:
             }).catch((e) => { console.error(e); process.exit(1); });
           "
 
+      - name: Digest the gated manifests (attestation subject — deterministic per SHA)
+        id: digest
+        run: |
+          cat plugins/*/manifest.json examples/*/manifest.json 2>/dev/null | sha256sum | cut -d' ' -f1 > /tmp/manifest-digest
+          echo "digest=$(cat /tmp/manifest-digest)" >> "$GITHUB_OUTPUT"
+
       - name: Attest the gate result (sigstore — unforgeable)
         uses: actions/attest-build-provenance@v2
         with:
           subject-name: ${{ github.repository }}
-          subject-digest: sha256:${{ github.sha }}
+          subject-digest: sha256:${{ steps.digest.outputs.digest }}
           push-to-registry: false
 
       - name: Post gate check run
@@ -79,4 +85,11 @@ jobs:
         run: |
           conclusion=success
           [ "${{ job.status }}" = "success" ] || conclusion=failure
-          curl -fsSL -X POST             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}"             -H "Accept: application/vnd.github+json"             "https://api.github.com/repos/${{ github.repository }}/check-runs"             -d "{\"name\":\"Psynaptix Plugin Gate\",\"head_sha\":\"${{ github.sha }}\",\"status\":\"completed\",\"conclusion\":\"$conclusion\"}" 
+          cat > /tmp/check.json <<JSON
+          {"name":"Psynaptix Plugin Gate","head_sha":"${{ github.sha }}","status":"completed","conclusion":"$conclusion","output":{"title":"Plugin gate $conclusion","summary":"npm test + canonical sanitizer on ${{ github.sha }}."}}
+          JSON
+          curl -fsSL -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/check-runs" \
+            -d @/tmp/check.json
