@@ -15,8 +15,10 @@ permissions:
   attestations: write
 
 env:
-  # psynaptix commit whose src/plugin/sanitizer.ts runs the static scan.
-  PSYNAPTIX_SANITIZER_SHA: 1e4e7151de39d4d26b77b12781b800825d58b7c9
+  # canonical psynaptix-plugins commit whose gate/sanitizer.ts runs the scan.
+  # The canonical repo is PUBLIC — the fetch works unauthenticated (the
+  # psynaptix service repo itself is private, so it cannot host the fetch).
+  CANONICAL_SANITIZER_SHA: PLACEHOLDER
 
 jobs:
   gate:
@@ -41,7 +43,7 @@ jobs:
       - name: Sanitizer scan (canonical sanitizer from psynaptix @ ${{ env.PSYNAPTIX_SANITIZER_SHA }})
         id: sanitize
         run: |
-          curl -fsSL "https://raw.githubusercontent.com/JRustyHaner/psynaptix/${{ env.PSYNAPTIX_SANITIZER_SHA }}/src/plugin/sanitizer.ts" -o /tmp/sanitizer.ts
+          curl -fsSL "https://raw.githubusercontent.com/JRustyHaner/psynaptix-plugins/${{ env.CANONICAL_SANITIZER_SHA }}/gate/sanitizer.ts" -o /tmp/sanitizer.ts
           node --experimental-strip-types --no-warnings -e "
             import('/tmp/sanitizer.ts').then(async ({ sanitizePluginDir }) => {
               const fs = await import('node:fs');
