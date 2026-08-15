@@ -1,0 +1,9 @@
+{
+  "id": "fake-eye-tracker",
+  "version": "1.0.0",
+  "entry": "entry.js",
+  "capabilities": ["signal:stream"],
+  "signalType": "eye-tracking",
+  "publisher": "psynaptix-dev",
+  "description": "Example plugin: a fake eye-tracker emitting synthetic samples — the reference implementation for the authoring devkit (issue #458)."
+}

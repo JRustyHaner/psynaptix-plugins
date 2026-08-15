@@ -1,0 +1,13 @@
+{
+  "name": "fake-eye-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Example Psynaptix signal-provider plugin (issue #458 devkit).",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

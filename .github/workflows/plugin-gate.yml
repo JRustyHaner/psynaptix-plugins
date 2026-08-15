@@ -1,0 +1,69 @@
+name: Psynaptix Plugin Gate
+
+# CANONICAL GATE WORKFLOW (issue #484) — do not modify.
+# The Psynaptix service verifies THIS file's hash at the pinned SHA before
+# trusting the gate result, and verifies the sigstore attestation this
+# workflow emits. A modified workflow is rejected as 'workflow mismatch'.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  id-token: write # sigstore keyless signing (attest-build-provenance)
+  contents: read
+  attestations: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install (scripts blocked — supply-chain hardening)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Run plugin tests
+        id: test
+        run: npm test
+
+      - name: Sanitizer scan (psynaptix plugin-gate action)
+        id: sanitize
+        uses: psynaptix/plugin-sanitizer-action@v1
+        with:
+          entry: entry.js
+
+      - name: Attest the gate result (sigstore — unforgeable)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ github.repository }}
+          subject-digest: sha256:${{ github.sha }}
+          push-to-registry: false
+
+      - name: Post gate check run
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const passed = steps.test.conclusion === 'success' && steps.sanitize.conclusion === 'success';
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Psynaptix Plugin Gate',
+              head_sha: context.sha,
+              status: 'completed',
+              conclusion: passed ? 'success' : 'failure',
+              output: {
+                title: passed ? 'Plugin gate passed' : 'Plugin gate failed',
+                summary: passed
+                  ? 'npm test passed + sanitizer clean.'
+                  : 'npm test and/or the injection sanitizer failed — see the job logs.',
+              },
+            });
